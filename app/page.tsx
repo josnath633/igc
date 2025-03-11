@@ -168,7 +168,7 @@ export default function Home() {
             </div>
             <div className="relative z-10 p-8 text-white">
               <h3 className="text-2xl font-bold mb-2">Faire un Don ?</h3>
-              <p className="text-3xl font-bold mb-2">2 500 €</p>
+              <p className="text-3xl font-bold mb-2">2 500 XFA</p>
               <p className="text-sm mb-6">Soutenez notre mission et aidez-nous à répandre la Parole de Dieu</p>
               <Button variant="default" className="bg-orange-500 hover:bg-orange-600 text-white">
                 Faire un Don Maintenant
