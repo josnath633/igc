@@ -62,6 +62,7 @@ export default function FamilySection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    
     const fetchLives = async () => {
       try {
         const response = await fetch("/api/auth/live");
