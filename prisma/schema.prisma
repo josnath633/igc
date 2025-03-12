@@ -15,7 +15,6 @@ enum Role {
   CLIENT
 }
 
-
 // Enum pour les statuts des lives
 enum LiveStatus {
   PENDING
@@ -42,12 +41,14 @@ model User {
   accounts      Account[]
   sessions      Session[]
   Authenticator Authenticator[]
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
 
   VerificationToken VerificationToken[]
+
+  // Relation avec les lives
+  liveStreams   Live[]          @relation("LiveViewers")
 }
 
 // Modèle Compte (pour l'authentification tiers)
@@ -113,19 +114,22 @@ model Live {
   // Les demandes d'accès pour ce live
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+
+  // Relation avec les utilisateurs (qui regardent ce live)
+  viewers     User[]      @relation("LiveViewers")
 }
 
 // Modèle Request (pour gérer les demandes d'accès d'un utilisateur à un live)
-
 model Request {
   id              String   @id @default(uuid())
   name            String
   surname         String
   functionInChurch String
-  status         String @default("PENDING")
+  status          String  @default("PENDING")
   createdAt       DateTime @default(now())
 }
 
+// Modèle VerificationToken (pour la vérification d'email ou réinitialisation de mot de passe)
 model VerificationToken {
   identifier String
   token      String
@@ -136,4 +140,3 @@ model VerificationToken {
 
   @@id([identifier, token])
 }
-
