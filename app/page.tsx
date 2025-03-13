@@ -1,3 +1,4 @@
+"use client"
 import Image from "next/image"
 import { Facebook, Twitter, Linkedin, Youtube } from "lucide-react"
 import Header from "@/components/header"
@@ -9,8 +10,82 @@ import BlogPost from "@/components/blog-post"
 import StatCounter from "@/components/stat-counter"
 import FamilySection from "@/components/family-section"
 import { Button } from "@/components/ui/button"
+import { getAudioFiles } from "@/lib/firebase"
+import { useState, useEffect } from "react"
 
 export default function Home() {
+  const [showAll, setShowAll] = useState(false);  // Ajouter un état pour basculer l'affichage
+
+  const [audioFiles, setAudioFiles] = useState<{ title: string, image: string, duration: string, audioUrl: string, isPlaying: boolean, currentTime: number }[]>([]);
+
+  useEffect(() => {
+    const fetchAudioFiles = async () => {
+      const urls = await getAudioFiles();
+      console.log("Fetched audio URLs:", urls); // Vérifier les URLs récupérées
+
+      const sermons = await Promise.all(urls.map(async (url, index) => {
+        // Créer un objet Audio pour charger et obtenir la durée réelle
+        const audio = new Audio(url);
+        
+        // Attendre que l'audio soit chargé pour obtenir la durée
+        await new Promise<void>((resolve) => {
+          audio.onloadedmetadata = () => {
+            resolve();
+          };
+        });
+
+        // Récupérer la durée réelle de l'audio
+        const duration = formatDuration(audio.duration); // Convertir la durée en format "mm:ss"
+
+        return {
+          title: `Sermon ${index + 1}`,
+          image: "https://images.unsplash.com/photo-1543465077-db45d34b88a5?q=80&w=240&auto=format&fit=crop", // URL d'image par défaut
+          duration,
+          audioUrl: url, // Ajouter l'URL audio ici
+          isPlaying: false, // État pour savoir si l'audio est en lecture
+          currentTime: 0, // Temps actuel de lecture
+        };
+      }));
+
+      // Limiter les sermons à 3 éléments
+      setAudioFiles(sermons.slice(0, 3)); // Mise à jour de l'état avec les 3 premiers sermons
+    };
+
+    fetchAudioFiles();
+  }, []);
+  const formatDuration = (duration: number) => {
+    const minutes = Math.floor(duration / 60);
+    const seconds = Math.floor(duration % 60);
+    return `${minutes}:${seconds < 10 ? "0" + seconds : seconds}`;
+  };
+
+  // Gérer la lecture du sermon (Play/Pause)
+  const handlePlayPause = (index: number) => {
+    const updatedFiles = [...audioFiles];
+    const selectedFile = updatedFiles[index];
+    const audioElement = new Audio(selectedFile.audioUrl);
+
+    // Si l'audio est déjà en lecture, on le met en pause
+    if (selectedFile.isPlaying) {
+      audioElement.pause();
+    } else {
+      audioElement.play();
+      audioElement.ontimeupdate = () => {
+        // Mise à jour du temps actuel pendant la lecture
+        const currentTime = audioElement.currentTime;
+        updatedFiles[index].currentTime = currentTime;
+        setAudioFiles(updatedFiles); // Mettre à jour l'état avec le temps actuel
+      };
+    }
+
+    updatedFiles[index].isPlaying = !selectedFile.isPlaying;
+    setAudioFiles(updatedFiles);
+  };
+
+  const handleToggleShowAll = () => {
+    setShowAll(!showAll);  // Alterner entre afficher tous ou seulement les 3 premiers
+  };
+  
   return (
     <div className="flex flex-col min-h-screen">
       <Header />
@@ -104,25 +179,30 @@ export default function Home() {
       </section>
 
       {/* Section Sermons */}
+  
+      {/* Section Sermons */}
       <section className="bg-white py-16">
         <div className="container mx-auto px-4">
           <h2 className="text-3xl font-bold text-center text-gray-800 mb-12">Écoutez Nos Sermons</h2>
           <div className="space-y-4 max-w-3xl mx-auto">
-            <SermonPlayer
-              title="Aimez-vous les uns les autres : Votre but et votre marche avec le cœur"
-              image="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=200&auto=format&fit=crop"
-              duration="45:30"
-            />
-            <SermonPlayer
-              title="Dieu est Beau : La Valeur de Dieu"
-              image="https://images.unsplash.com/photo-1507036066871-b7e8032b3dea?q=80&w=200&auto=format&fit=crop"
-              duration="38:45"
-            />
-            <SermonPlayer
-              title="Découvrez les Vrais Fidèles Partout"
-              image="https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?q=80&w=200&auto=format&fit=crop"
-              duration="42:15"
-            />
+          {audioFiles.length > 0 ? (
+          audioFiles.map((sermon, index) => (
+            <div key={index}>
+              <h3>{sermon.title}</h3>
+              <p>Durée: {sermon.duration}</p>
+              <p>Temps actuel: {formatDuration(sermon.currentTime)}</p>
+              <button onClick={() => handlePlayPause(index)}>
+                {sermon.isPlaying ? "Pause" : "Play"}
+              </button>
+              <audio controls>
+                <source src={sermon.audioUrl} type="audio/mpeg" />
+                Votre navigateur ne prend pas en charge l'élément audio.
+              </audio>
+            </div>
+          ))
+        ) : (
+          <p>Chargement des sermons...</p>
+        )}
           </div>
           <div className="text-center mt-8">
             <Button variant="default" className="bg-orange-500 hover:bg-orange-600 text-white">
