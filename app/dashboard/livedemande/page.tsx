@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { SidebarProvider } from "@/components/ui/sidebar"; // Import SidebarProvider
-import { AppSidebar } from "../../dashboardadmin/component/appside"; // Assurez-vous que le chemin est correct
+; // Assurez-vous que le chemin est correct
 import { updateRequestStatusAction } from "./actions/updateRequestStatusAction"; // Importer la Server Action
 import { getRequestsAction } from "./actions/getRequestsAction"; // Importer l'action pour récupérer les demandes
+import { AppSidebar } from "@/components/app-sidebar";
 
 // Définition des types pour les requêtes
 interface Request {
