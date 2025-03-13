@@ -1,7 +1,7 @@
 import { auth } from "@/auth"
+import { AppSidebar } from "@/components/app-sidebar"
 import { SidebarProvider } from "@/components/ui/sidebar"
-import { redirect } from "next/navigation"
-import { AppSidebar } from "../../dashboardadmin/component/appside"
+
 
 
 // The main layout component that includes the sidebar logic and authentication check
