@@ -5,6 +5,7 @@ import Image from "next/image";
 import { motion } from "framer-motion";
 import { Clock } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useRouter } from "next/navigation";  // Import de useRouter
 
 // 🟢 Définition du type des données Live
 interface Live {
@@ -18,13 +19,21 @@ interface Live {
 
 // 🟢 Component for displaying individual live item
 const LiveItem = ({ live }: { live: Live }) => {
+  const router = useRouter();  // Utilisation du hook useRouter
+
+  const handleClick = () => {
+    // Redirection vers /loa lorsque l'élément est cliqué
+    router.push("/liverequest");
+  };
+
   return (
     <motion.div
       key={live.id}
       initial={{ y: 20, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
       transition={{ duration: 0.6 }}
-      className="bg-white rounded-xl shadow-lg overflow-hidden mb-6"
+      className="bg-white rounded-xl shadow-lg overflow-hidden mb-6 cursor-pointer"
+      onClick={handleClick} // OnClick pour la redirection
     >
       {/* Status Badge */}
       <div className="flex justify-between items-start mb-4 p-4">
@@ -62,7 +71,6 @@ export default function FamilySection() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-
     const fetchLives = async () => {
       try {
         const response = await fetch("/api/auth/live");
@@ -74,7 +82,6 @@ export default function FamilySection() {
         setLoading(false);
       }
     };
-    
 
     fetchLives();
   }, []);

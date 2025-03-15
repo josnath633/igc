@@ -1,6 +1,6 @@
 "use server";
 
-import  prisma  from "@/lib/prisma"; // Assurez-vous que Prisma est bien configuré
+import  {prisma}  from "@/lib/prisma"; // Assurez-vous que Prisma est bien configuré
 
 // Action serveur pour récupérer toutes les demandes
 export async function getRequestsAction() {

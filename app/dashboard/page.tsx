@@ -44,9 +44,11 @@ export default function Page() {
                 Créer un Live
               </div>
             </Link>
+            <Link href="/dashboard/livedemande">
             <div className="aspect-video rounded-xl bg-muted/50 flex items-center justify-center text-lg font-semibold cursor-pointer hover:bg-muted/70">
               Créer une Publication
             </div>
+            </Link>
             <div className="aspect-video rounded-xl bg-muted/50 flex items-center justify-center text-lg font-semibold cursor-pointer hover:bg-muted/70">
               Voir la Liste des Lives
             </div>

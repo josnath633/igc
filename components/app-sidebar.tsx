@@ -43,8 +43,8 @@ const data = {
   ],
   navMain: [
     {
-      title: "Playground",
-      url: "#",
+      title: "demande",
+      url: "/dashboard/livedemande",
       icon: SquareTerminal,
       isActive: true,
       items: [
