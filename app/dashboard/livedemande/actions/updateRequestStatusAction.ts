@@ -1,6 +1,6 @@
 "use server";
 
-import  prisma  from "@/lib/prisma"; // Assurez-vous que Prisma est correctement configuré
+import  {prisma}  from "@/lib/prisma";  // Assurez-vous que Prisma est correctement configuré
 import { auth } from "@/auth"; // Votre méthode d'authentification
 
 // Action serveur pour mettre à jour le statut d'une demande

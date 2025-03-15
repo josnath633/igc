@@ -1,7 +1,9 @@
 // app/request-form/requestFormAction.ts
 "use server";
 
-import  prisma  from "@/lib/prisma"; // Assurez-vous que Prisma Client est importé correctement
+import { prisma } from "@/lib/prisma";
+
+// Assurez-vous que Prisma Client est importé correctement
 
 export async function RequestFormAction({
   name,
