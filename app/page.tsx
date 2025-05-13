@@ -158,7 +158,7 @@ export default function Home() {
       </section>
 
       {/* Section Sermons */}
-      <SermonsSection />
+      {/* <SermonsSection /> */}
 
       {/* Section CTA */}
       <EnhancedCtaSection />
