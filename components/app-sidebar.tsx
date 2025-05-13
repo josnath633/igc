@@ -1,18 +1,7 @@
 "use client"
 
 import * as React from "react"
-import {
-  AudioWaveform,
-  BookOpen,
-  Bot,
-  Command,
-  Frame,
-  GalleryVerticalEnd,
-  Map,
-  PieChart,
-  Settings2,
-  SquareTerminal,
-} from "lucide-react"
+import { BookOpen, Frame, GalleryVerticalEnd, Map, PieChart, Settings2, Video, FileText, Users, Home, Calendar } from 'lucide-react'
 
 import { NavMain } from "@/components/nav-main"
 import { NavProjects } from "@/components/nav-projects"
@@ -26,57 +15,71 @@ import {
   SidebarRail,
 } from "@/components/ui/sidebar"
 
-// This is sample data.
+// Données combinées
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "admin",
+    email: "admin@igc.org",
+    avatar: "/avatars/admin.jpg",
   },
   teams: [
-{
-          name: "IGC",
+    {
+      name: "IGC",
       logo: GalleryVerticalEnd,
       plan: "EGLISE",
     },
-   
   ],
   navMain: [
     {
-      title: "demande",
-      url: "/dashboard/livedemande",
-      icon: SquareTerminal,
+      title: "Dashboard",
+      url: "/dashboard",
+      icon: Home,
       isActive: true,
+    },
+    {
+      title: "Créer un Live",
+      url: "/dashboard/creelive",
+      icon: Video,
+    },
+    {
+      title: "Publications",
+      url: "/dashboard/livedemande",
+      icon: FileText,
       items: [
         {
-          title: "History",
+          title: "Demandes",
+          url: "/dashboard/livedemande",
+        },
+        {
+          title: "Historique",
           url: "#",
         },
         {
-          title: "Starred",
-          url: "#",
-        },
-        {
-          title: "Settings",
+          title: "Paramètres",
           url: "#",
         },
       ],
     },
     {
-      title: "Models",
-      url: "#",
-      icon: Bot,
+      title: "Calendrier",
+      url: "/calendar",
+      icon: Calendar,
+    },
+    {
+      title: "Utilisateurs",
+      url: "/users",
+      icon: Users,
       items: [
         {
-          title: "Genesis",
+          title: "Liste",
           url: "#",
         },
         {
-          title: "Explorer",
+          title: "Rôles",
           url: "#",
         },
         {
-          title: "Quantum",
+          title: "Permissions",
           url: "#",
         },
       ],
@@ -91,11 +94,7 @@ const data = {
           url: "#",
         },
         {
-          title: "Get Started",
-          url: "#",
-        },
-        {
-          title: "Tutorials",
+          title: "Tutoriels",
           url: "#",
         },
         {
@@ -105,42 +104,24 @@ const data = {
       ],
     },
     {
-      title: "Settings",
-      url: "#",
+      title: "Paramètres",
+      url: "/settings",
       icon: Settings2,
-      items: [
-        {
-          title: "General",
-          url: "#",
-        },
-        {
-          title: "Team",
-          url: "#",
-        },
-        {
-          title: "Billing",
-          url: "#",
-        },
-        {
-          title: "Limits",
-          url: "#",
-        },
-      ],
     },
   ],
   projects: [
     {
-      name: "Design Engineering",
+      name: "Cultes",
       url: "#",
       icon: Frame,
     },
     {
-      name: "Sales & Marketing",
+      name: "Événements",
       url: "#",
       icon: PieChart,
     },
     {
-      name: "Travel",
+      name: "Missions",
       url: "#",
       icon: Map,
     },
@@ -158,7 +139,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         <NavProjects projects={data.projects} />
       </SidebarContent>
       <SidebarFooter>
-        <NavUser />
+        <NavUser  />
       </SidebarFooter>
       <SidebarRail />
     </Sidebar>

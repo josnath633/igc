@@ -23,10 +23,8 @@ export default async function OrganisationLayout({
   return (
     <main>
         <SidebarProvider className="bg-white">
-
-      <AppSidebar />
       {/* Pass ownerId as a prop to children */}
-      <div className="bg-transparent">
+      <div className="w-full">
       {children}
       </div>
       </SidebarProvider>
