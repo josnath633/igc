@@ -4,6 +4,7 @@ import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
 import { getYouTubeConfig } from "@/lib/firebase"
 import { Send, ThumbsUp, MessageSquare, Share2, User } from "lucide-react"
+import { createComment } from "./actions/comments"
 
 interface YouTubeConfig {
   apiKey: string
@@ -27,6 +28,7 @@ interface Comment {
   text: string
   author: string
   timestamp: Date
+  
 }
 
 const LivePage = () => {
@@ -37,20 +39,32 @@ const LivePage = () => {
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
+  const [userName, setUserName] = useState<string>("")
 
-  const handleCommentSubmit = () => {
+  // Récupération du nom utilisateur depuis le localStorage
+  useEffect(() => {
+    const nameFromStorage = localStorage.getItem("userName")
+    if (nameFromStorage) {
+      setUserName(nameFromStorage)
+    } else {
+      setUserName("Anonyme")
+    }
+  }, [])
+
+  // Soumettre un nouveau commentaire
+  const handleCommentSubmit = async () => {
     if (comment.trim()) {
-      const newComment = {
-        id: Date.now().toString(),
-        text: comment,
-        author: "Vous",
-        timestamp: new Date(),
+      try {
+        const newComment = await createComment({ text: comment, author: userName }) // Appel de la Server Action
+        setComments([newComment as any, ...comments]) // Ajoute le commentaire en haut
+        setComment("") // Réinitialise le champ de commentaire
+      } catch (error) {
+        setError("Erreur lors de l'ajout du commentaire.")
       }
-      setComments([newComment, ...comments])
-      setComment("")
     }
   }
 
+  // Gérer le like
   const handleLike = () => {
     if (isLiked) {
       setLikeCount(likeCount - 1)
@@ -60,6 +74,7 @@ const LivePage = () => {
     setIsLiked(!isLiked)
   }
 
+  // Récupérer les données de la vidéo et les commentaires
   useEffect(() => {
     const fetchVideoData = async () => {
       try {
@@ -67,7 +82,7 @@ const LivePage = () => {
         const config = await getYouTubeConfig()
         if (config && config.apiKey && config.videoId) {
           const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${config.videoId}&key=${config.apiKey}`,
+            `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${config.videoId}&key=${config.apiKey}`
           )
           const data = await response.json()
 
@@ -75,28 +90,12 @@ const LivePage = () => {
             setVideoData(data.items[0])
             setLikeCount(Number.parseInt(data.items[0].statistics.likeCount || "0"))
 
-            // Ajouter des commentaires fictifs pour la démo
-            const demoComments = [
-              {
-                id: "1",
-                text: "Merci pour ce message inspirant!",
-                author: "Marie L.",
-                timestamp: new Date(Date.now() - 1000 * 60 * 5), // 5 minutes ago
-              },
-              {
-                id: "2",
-                text: "Amen! Que Dieu vous bénisse.",
-                author: "Jean P.",
-                timestamp: new Date(Date.now() - 1000 * 60 * 10), // 10 minutes ago
-              },
-              {
-                id: "3",
-                text: "Je suis très touché par ce message.",
-                author: "Sophie K.",
-                timestamp: new Date(Date.now() - 1000 * 60 * 15), // 15 minutes ago
-              },
-            ]
-            setComments(demoComments)
+            // Récupérer les commentaires depuis l'API
+            const commentResponse = await fetch("/api/comments")
+            if (commentResponse.ok) {
+              const fetchedComments = await commentResponse.json()
+              setComments(fetchedComments)
+            }
           } else {
             setError("Aucune vidéo trouvée.")
           }
@@ -113,6 +112,7 @@ const LivePage = () => {
     fetchVideoData()
   }, [])
 
+  // Affichage en cas de chargement
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-yellow-50">
@@ -124,6 +124,7 @@ const LivePage = () => {
     )
   }
 
+  // Affichage en cas d'erreur
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-yellow-50">
@@ -141,6 +142,7 @@ const LivePage = () => {
     )
   }
 
+  // Affichage principal
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-yellow-50">
       {videoData && (
@@ -179,9 +181,7 @@ const LivePage = () => {
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
                       onClick={handleLike}
-                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${
-                        isLiked ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"
-                      } transition-colors`}
+                      className={`flex items-center gap-1 px-3 py-1.5 rounded-full ${isLiked ? "bg-red-100 text-red-600" : "bg-gray-100 text-gray-600 hover:bg-gray-200"} transition-colors`}
                     >
                       <ThumbsUp className={`h-5 w-5 ${isLiked ? "fill-red-600 text-red-600" : ""}`} />
                       <span>{likeCount}</span>
@@ -246,9 +246,9 @@ const LivePage = () => {
                             <User className="h-4 w-4 text-yellow-600" />
                           </div>
                           <span className="font-medium text-sm text-gray-700">{comment.author}</span>
-                          <span className="text-xs text-gray-500">
-                            {comment.timestamp.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                          </span>
+  
+
+
                         </div>
                         <p className="text-gray-700 text-sm">{comment.text}</p>
                       </motion.div>

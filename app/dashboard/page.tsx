@@ -41,7 +41,7 @@ export default function Page() {
       color: "from-red-600 to-red-500",
     },
     {
-      title: "Créer une Publication",
+      title: "liste des demandes",
       icon: <FileText className="size-8 mb-2" />,
       href: "/dashboard/livedemande",
       color: "from-yellow-500 to-yellow-400",

@@ -1,7 +1,7 @@
 // app/actions/requestStatusAction.ts
 "use server";
 
-import  prisma  from "@/lib/prisma"; // Assurez-vous que Prisma est configuré
+import  {prisma}  from "@/lib/prisma"; // Assurez-vous que Prisma est configuré
 
 // Server Action pour obtenir le statut de la demande
 export async function getRequestStatus(userName: string) {

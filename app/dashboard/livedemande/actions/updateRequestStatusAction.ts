@@ -1,7 +1,6 @@
 "use server";
 
-import  {prisma}  from "@/lib/prisma";  // Assurez-vous que Prisma est correctement configuré
-import { auth } from "@/auth"; // Votre méthode d'authentification
+import { prisma } from "@/lib/prisma";
 
 // Action serveur pour mettre à jour le statut d'une demande
 export async function updateRequestStatusAction(
@@ -9,7 +8,7 @@ export async function updateRequestStatusAction(
   status: "APPROVED" | "REJECTED"
 ) {
   try {
-    // Valider que l'ID de la demande et le statut sont valides
+    // Vérifications de base
     if (!requestId || !status) {
       throw new Error("Request ID and status are required");
     }
@@ -18,19 +17,13 @@ export async function updateRequestStatusAction(
       throw new Error("Invalid status");
     }
 
-    // Vérifier la session de l'utilisateur
-    const session = await auth();
-    if (!session) {
-      throw new Error("Unauthorized");
-    }
-
-    // Mettre à jour la demande dans la base de données
+    // Mise à jour dans la base de données
     const updatedRequest = await prisma.request.update({
-      where: { id: requestId },
+      where: { id: requestId }, // ici on garde le string si ton modèle est String
       data: { status },
     });
 
-    return updatedRequest; // Retourne la demande mise à jour
+    return updatedRequest;
   } catch (error) {
     console.error("Error updating request status:", error);
     throw new Error("Failed to update request status");
