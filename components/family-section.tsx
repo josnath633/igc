@@ -1,4 +1,4 @@
-"use client"
+'use client'
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
@@ -21,15 +21,16 @@ interface Live {
   status: "EN COURS" | "TERMINÉ" | "À VENIR"
 }
 
-// Component for displaying individual live item
+// Fonction pour afficher un élément individuel de live
 const LiveItem = ({ live }: { live: Live }) => {
   const router = useRouter()
 
   const handleClick = () => {
-    router.push("/liverequest")
+    // Redirige vers la page de détails avec l'ID du live
+    router.push(`/liverequest?id=${live.id}`)
   }
 
-  // Déterminer la couleur du badge en fonction du statut
+  // Fonction pour définir la couleur du badge en fonction du statut
   const getBadgeVariant = (status: string) => {
     switch (status) {
       case "EN COURS":
@@ -55,9 +56,7 @@ const LiveItem = ({ live }: { live: Live }) => {
           </Badge>
           <div className="flex items-center text-muted-foreground text-sm">
             <Clock size={14} className="mr-1" />
-            <span>
-              {live.startTime} - {live.endTime}
-            </span>
+            <span>{live.startTime} - {live.endTime}</span>
           </div>
         </div>
         <CardTitle className="text-2xl mt-2 line-clamp-1">{live.title}</CardTitle>
@@ -76,54 +75,24 @@ const LiveItem = ({ live }: { live: Live }) => {
   )
 }
 
-// Main Section Component
+// Fonction principale de la section de la famille
 export default function FamilySection() {
   const [lives, setLives] = useState<Live[]>([])
   const [loading, setLoading] = useState(true)
 
+  // Effet pour récupérer les lives depuis l'API lors du montage du composant
   useEffect(() => {
-    // Simulate API call with mock data for demonstration
-    const mockLives: Live[] = [
-      {
-        id: "1",
-        title: "Culte du Dimanche",
-        description: "Rejoignez-nous pour notre culte hebdomadaire avec louange et enseignement biblique.",
-        startTime: "10:00",
-        endTime: "12:00",
-        status: "EN COURS",
-      },
-      {
-        id: "2",
-        title: "Étude Biblique",
-        description: "Approfondissez votre connaissance des Écritures avec notre pasteur.",
-        startTime: "19:00",
-        endTime: "20:30",
-        status: "À VENIR",
-      },
-      {
-        id: "3",
-        title: "Prière Matinale",
-        description: "Commencez votre journée avec un temps de prière communautaire.",
-        startTime: "06:30",
-        endTime: "07:30",
-        status: "TERMINÉ",
-      },
-    ]
-
     const fetchLives = async () => {
       try {
-        // Uncomment this to use real API
-        // const response = await fetch("/api/auth/live")
-        // const data: Live[] = await response.json()
-        // setLives(data)
-
-        // Using mock data for now
-        setTimeout(() => {
-          setLives(mockLives)
-          setLoading(false)
-        }, 1000)
+        const response = await fetch("/api/lives")
+        if (!response.ok) {
+          throw new Error("Erreur lors de la récupération des lives")
+        }
+        const data: Live[] = await response.json()
+        setLives(data)
       } catch (error) {
         console.error("Erreur lors de la récupération des lives", error)
+      } finally {
         setLoading(false)
       }
     }
@@ -134,6 +103,7 @@ export default function FamilySection() {
   return (
     <section className="py-16 bg-gradient-to-b from-white to-amber-50">
       <div className="container mx-auto px-4">
+        {/* Titre et description de la section */}
         <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: -20 }}
@@ -145,8 +115,9 @@ export default function FamilySection() {
           <p className="text-muted-foreground">Rejoignez-nous pour nos diffusions en direct</p>
         </motion.div>
 
+        {/* Grid contenant l'image et les diffusions */}
         <div className="grid md:grid-cols-2 gap-8">
-          {/* Image Section */}
+          {/* Image de la section */}
           <motion.div
             className="relative h-[400px] md:h-auto rounded-xl overflow-hidden"
             initial={{ opacity: 0, x: -30 }}
@@ -170,7 +141,7 @@ export default function FamilySection() {
             </div>
           </motion.div>
 
-          {/* Content Section - Carousel */}
+          {/* Section des diffusions - Carousel */}
           <motion.div
             className="flex flex-col justify-center mt-16"
             initial={{ opacity: 0, x: 30 }}
@@ -220,4 +191,3 @@ export default function FamilySection() {
     </section>
   )
 }
-
