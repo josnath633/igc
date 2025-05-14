@@ -2,7 +2,6 @@
 
 import { prisma } from "@/lib/prisma";
 
-
 export async function createLive({
   title,
   description,
@@ -15,18 +14,19 @@ export async function createLive({
   endTime: Date;
 }) {
   try {
-    // Vérifier que title et startTime ne sont pas vides
+    // Vérifier que les champs requis sont présents
     if (!title || !startTime || !endTime) {
       throw new Error("Title, start time, and end time are required.");
     }
 
-    // Remplacement de null par une chaîne vide pour éviter l'erreur Prisma
+    // Créer le live
     const newLive = await prisma.live.create({
       data: {
         title,
-        description: description ?? "", // Assure que Prisma ne reçoit jamais `null`
+        description: description ?? "", // Utilise une chaîne vide si null ou undefined
         startTime,
         endTime,
+        dateTime: startTime, // On prend startTime comme date de référence pour `dateTime`
       },
     });
 

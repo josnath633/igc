@@ -39,41 +39,47 @@ const WaitingPage = () => {
   }, [])
 
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+  
     const checkRequestStatus = async () => {
-      if (userName) {
-        try {
-          const userStatus = await getRequestStatus(userName)
-
-          if (userStatus === "APPROVED") {
-            setStatus("APPROVED")
-            setTimeout(() => {
-              router.push("/live")
-            }, 2000)
-          } else if (userStatus === "REJECTED") {
-            setStatus("REJECTED")
-          } else {
-            setStatus("PENDING")
-
-            // Vérifier à nouveau après 10 secondes
-            setTimeout(() => {
-              checkRequestStatus()
-            }, 10000)
-          }
-        } catch (err) {
-          setError("Une erreur s'est produite lors de la vérification du statut de la demande.")
-          console.error(err)
-        } finally {
-          setIsLoading(false)
+      if (!userName) return;
+  
+      try {
+        const userStatus = await getRequestStatus(userName);
+        console.log("Statut reçu:", userStatus);
+  
+        if (userStatus === "APPROVED") {
+          setStatus("APPROVED");
+          setTimeout(() => {
+            router.push("/live");
+          }, 2000);
+        } else if (userStatus === "REJECTED") {
+          setStatus("REJECTED");
+        } else {
+          // Tant que c'est en attente, on continue de vérifier
+          setStatus("PENDING");
+  
+          timeoutId = setTimeout(() => {
+            checkRequestStatus(); // Relance le check
+          }, 10000); // toutes les 10s
         }
+      } catch (err) {
+        console.error("Erreur lors de la vérification du statut :", err);
+        setError("Impossible de vérifier le statut pour le moment.");
+      } finally {
+        setIsLoading(false);
       }
-    }
-
+    };
+  
     if (userName) {
-      checkRequestStatus()
-    } else {
-      setIsLoading(false)
+      checkRequestStatus();
     }
-  }, [userName, router])
+  
+    return () => {
+      clearTimeout(timeoutId); // Nettoyage au démontage du composant
+    };
+  }, [userName, router]);
+  
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-white to-yellow-50 p-4">

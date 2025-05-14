@@ -103,31 +103,60 @@ model Authenticator {
 }
 
 // Modèle Live (pour gérer les événements en direct)
-model Live {
-  id          String      @id @default(cuid())
-  title       String
-  description String?
-  startTime   DateTime
-  endTime     DateTime
-  status      LiveStatus @default(PENDING)
-
-  // Les demandes d'accès pour ce live
-  createdAt   DateTime    @default(now())
-  updatedAt   DateTime    @updatedAt
-
-  // Relation avec les utilisateurs (qui regardent ce live)
-  viewers     User[]      @relation("LiveViewers")
-}
-
-// Modèle Request (pour gérer les demandes d'accès d'un utilisateur à un live)
 model Request {
-  id              String   @id @default(uuid())
-  name            String
-  surname         String
+  id               String   @id @default(cuid())  // ID généré automatiquement
+  name             String
+  surname          String
   functionInChurch String
-  status          String  @default("PENDING")
-  createdAt       DateTime @default(now())
+  liveSessionId    String   // Clé étrangère vers le modèle Live
+  status           String   @default("PENDING")
+  createdAt        DateTime @default(now())
+
+  // Relation avec le modèle Live
+  liveSession      Live     @relation(fields: [liveSessionId], references: [id])
 }
+
+model Comment {
+  id        String   @id @default(cuid())
+  text      String
+  author    String   // Nom ou pseudo de l’auteur stocké en clair
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt]) // Utile pour suppression automatique
+}
+
+model Donation {
+  id                    Int      @id @default(autoincrement())
+  reference             String   // external_reference
+  payerEmail           String   // payer_email
+  payerMsisdn          String   // payer_msisdn
+  shortDescription     String   // short_description
+  amount               Float    // amount
+  serverTransactionId  String   // server_transaction_id
+  billId               String   // bill_id from the external e-billing system
+  createdAt            DateTime @default(now()) // Automatically set the creation time
+  updatedAt            DateTime @updatedAt // Automatically updated when the record is modified
+}
+
+model Live {
+  id          String    @id @default(uuid())
+  title       String
+  description String
+  dateTime    DateTime
+  startTime   DateTime  // Heure de début du live
+  endTime     DateTime  // Heure de fin du live
+  createdAt   DateTime  @default(now())
+
+  // Relation inverse : Un Live peut avoir plusieurs requests
+  requests    Request[]
+
+  // Relation pour les utilisateurs ayant regardé ce live
+  User        User[]    @relation("LiveViewers")
+}
+
+
+
 
 // Modèle VerificationToken (pour la vérification d'email ou réinitialisation de mot de passe)
 model VerificationToken {

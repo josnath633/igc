@@ -1,32 +1,34 @@
-// app/request-form/requestFormAction.ts
-"use server";
-
+'use server'
 import { prisma } from "@/lib/prisma";
-
-// Assurez-vous que Prisma Client est importé correctement
 
 export async function RequestFormAction({
   name,
   surname,
   functionInChurch,
+  liveSessionId, // ID de la session live
 }: {
   name: string;
   surname: string;
   functionInChurch: string;
+  liveSessionId: string;  // Ajoutez liveSessionId comme paramètre
 }) {
   // Validation des champs
-  if (!name || !surname || !functionInChurch) {
+  if (!name || !surname || !functionInChurch || !liveSessionId) {
     return { success: false, message: "Tous les champs sont requis." };
   }
 
+  // Ajout d'un log pour vérifier si liveSessionId est bien défini
+  console.log("ID de la session live:", liveSessionId);  // Ajoute un log ici
+
   try {
-    // Enregistrement dans la base de données via Prisma
+    // Enregistrement de la demande dans la base de données avec la référence du live
     const newRequest = await prisma.request.create({
       data: {
         name,
         surname,
         functionInChurch,
-        status: "PENDING", // Le statut par défaut
+        liveSessionId,  // Enregistrer l'ID du live avec la demande
+        status: "PENDING",  // Le statut par défaut
       },
     });
 

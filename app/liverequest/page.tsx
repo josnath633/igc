@@ -1,57 +1,66 @@
-"use client"
+"use client";
 
-import type React from "react"
-
-import { useState } from "react"
-import { useRouter } from "next/navigation"
-import { motion } from "framer-motion"
-import { RequestFormAction } from "./action/request"
-import { User, Briefcase, Check } from "lucide-react"
+import { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { motion } from "framer-motion";
+import { RequestFormAction } from "./action/request";
+import { User, Briefcase, Check } from "lucide-react";
 
 const RequestForm = () => {
-  const [name, setName] = useState("")
-  const [surname, setSurname] = useState("")
-  const [functionInChurch, setFunctionInChurch] = useState("")
-  const [error, setError] = useState("")
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isSuccess, setIsSuccess] = useState(false)
-  const router = useRouter()
+  const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [functionInChurch, setFunctionInChurch] = useState("");
+  const [error, setError] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [liveSessionId, setLiveSessionId] = useState("");  // Ajoutez l'ID de session live ici
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const url = window.location.href;
+    const match = url.match(/id=([0-9a-fA-F-]{36})/);
+    if (match && match[1]) {
+      setLiveSessionId(match[1]);
+    }
+  }, []);
+  
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
     // Validation des champs du formulaire
-    if (!name || !surname || !functionInChurch) {
-      setError("Tous les champs sont requis.")
-      return
+    if (!name || !surname || !functionInChurch || !liveSessionId) {
+      setError("Tous les champs sont requis.");
+      return;
     }
 
-    setIsSubmitting(true)
-    setError("")
+    setIsSubmitting(true);
+    setError("");
 
     try {
-      // Appel à l'action serveur pour envoyer la requête
-      const response = await RequestFormAction({ name, surname, functionInChurch })
+      // Appel à l'action serveur pour envoyer la requête avec l'ID de la session live
+      const response = await RequestFormAction({ name, surname, functionInChurch, liveSessionId });
 
       if (response.success) {
-        setIsSuccess(true)
+        setIsSuccess(true);
         // Stocker le nom d'utilisateur dans localStorage pour la page d'attente
-        localStorage.setItem("userName", name)
+        localStorage.setItem("userName", name);
 
         // Rediriger après 2 secondes
         setTimeout(() => {
-          router.push("/waiting")
-        }, 2000)
+          router.push("/waiting");
+        }, 2000);
       } else {
-        setError(response.message || "Une erreur est survenue.")
+        setError(response.message || "Une erreur est survenue.");
       }
     } catch (error) {
-      console.error("Erreur lors de la soumission:", error)
-      setError("Une erreur s'est produite. Veuillez réessayer.")
+      console.error("Erreur lors de la soumission:", error);
+      setError("Une erreur s'est produite. Veuillez réessayer.");
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-white to-yellow-50 p-4">
@@ -85,27 +94,6 @@ const RequestForm = () => {
           </motion.div>
         ) : (
           <div className="bg-white p-8 rounded-xl shadow-lg border border-yellow-200">
-            <div className="flex items-center justify-center mb-6">
-              <div className="w-16 h-16 bg-gradient-to-r from-yellow-500 to-yellow-300 rounded-full flex items-center justify-center">
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  width="32"
-                  height="32"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="text-black"
-                >
-                  <path d="M12 2L2 7l10 5 10-5-10-5z"></path>
-                  <path d="M2 17l10 5 10-5"></path>
-                  <path d="M2 12l10 5 10-5"></path>
-                </svg>
-              </div>
-            </div>
-
             <h2 className="text-2xl font-bold text-center text-black mb-6">Formulaire de Demande</h2>
 
             {error && (
@@ -123,81 +111,57 @@ const RequestForm = () => {
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">
                   Nom
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="name"
-                    type="text"
-                    className="w-full pl-10 pr-3 py-2 border border-yellow-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="Entrez votre nom"
-                  />
-                </div>
+                <input
+                  id="name"
+                  type="text"
+                  className="w-full p-2 border border-yellow-200 rounded-lg"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="Entrez votre nom"
+                />
               </div>
 
               <div className="space-y-2">
                 <label htmlFor="surname" className="block text-sm font-medium text-gray-700">
                   Prénom
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="surname"
-                    type="text"
-                    className="w-full pl-10 pr-3 py-2 border border-yellow-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
-                    value={surname}
-                    onChange={(e) => setSurname(e.target.value)}
-                    placeholder="Entrez votre prénom"
-                  />
-                </div>
+                <input
+                  id="surname"
+                  type="text"
+                  className="w-full p-2 border border-yellow-200 rounded-lg"
+                  value={surname}
+                  onChange={(e) => setSurname(e.target.value)}
+                  placeholder="Entrez votre prénom"
+                />
               </div>
 
               <div className="space-y-2">
                 <label htmlFor="functionInChurch" className="block text-sm font-medium text-gray-700">
                   Fonction dans l'église
                 </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Briefcase className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    id="functionInChurch"
-                    type="text"
-                    className="w-full pl-10 pr-3 py-2 border border-yellow-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all"
-                    value={functionInChurch}
-                    onChange={(e) => setFunctionInChurch(e.target.value)}
-                    placeholder="Entrez votre fonction"
-                  />
-                </div>
+                <input
+                  id="functionInChurch"
+                  type="text"
+                  className="w-full p-2 border border-yellow-200 rounded-lg"
+                  value={functionInChurch}
+                  onChange={(e) => setFunctionInChurch(e.target.value)}
+                  placeholder="Entrez votre fonction"
+                />
               </div>
 
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
+              <button
                 type="submit"
-                className="w-full bg-gradient-to-r from-red-600 to-red-500 text-white py-3 rounded-lg font-medium hover:from-red-700 hover:to-red-600 transition-all duration-300 flex items-center justify-center"
+                className="w-full bg-red-600 text-white py-3 rounded-lg"
                 disabled={isSubmitting}
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                    Traitement en cours...
-                  </>
-                ) : (
-                  "Envoyer la demande"
-                )}
-              </motion.button>
+                {isSubmitting ? "Traitement en cours..." : "Envoyer la demande"}
+              </button>
             </form>
           </div>
         )}
       </motion.div>
     </div>
-  )
-}
+  );
+};
 
-export default RequestForm
+export default RequestForm;
