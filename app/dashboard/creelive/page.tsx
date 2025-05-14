@@ -9,9 +9,8 @@ import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/s
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
 import { Button } from "@/components/ui/button"
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle } from "@/components/ui/dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Clock, Calendar, Video, Check } from 'lucide-react'
+import { Clock, Video, Check } from 'lucide-react'
 import { createLive } from "./action/createlive"
 
 // Définition du type LiveSession
@@ -55,14 +54,12 @@ export default function CreateLivePage() {
       setEndTime("")
       setIsSuccess(true)
       
-      // Reset success message after 3 seconds
       setTimeout(() => setIsSuccess(false), 3000)
     } catch (error) {
       console.error("Erreur lors de la création du live", error)
     }
   }
 
-  // Liste des heures possibles (exemple de 08h00 à 22h00)
   const availableTimes = Array.from({ length: 15 }, (_, i) => {
     const hour = (8 + i).toString().padStart(2, "0")
     return `${hour}:00`
