@@ -126,7 +126,7 @@ model Comment {
   @@index([expiresAt]) // Utile pour suppression automatique
 }
 
-model Donation {
+model donation {
   id                    Int      @id @default(autoincrement())
   reference             String   // external_reference
   payerEmail           String   // payer_email
