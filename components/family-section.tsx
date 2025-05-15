@@ -126,7 +126,7 @@ export default function FamilySection() {
           >
             <div className="absolute inset-0 border-2 border-amber-400 rounded-xl z-10 pointer-events-none"></div>
             <Image
-              src="https://images.unsplash.com/photo-1601455763557-db1bea8a9a5a?q=80&w=2574&auto=format&fit=crop"
+              src="/images/live.jpg"
               alt="Famille en prière"
               fill
               className="object-cover transition-transform duration-700 hover:scale-105"
