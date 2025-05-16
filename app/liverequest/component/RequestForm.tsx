@@ -120,7 +120,7 @@ const RequestForm = () => {
               
               <div className="space-y-2">
                 <label htmlFor="functionInChurch" className="block text-sm font-medium text-gray-700">
-                   l'église
+                   Eglise
                 </label>
                 <input
                   id="functionInChurch"
