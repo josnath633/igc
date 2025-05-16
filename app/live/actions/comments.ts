@@ -3,7 +3,6 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
-// 🔁 Type du retour possible : succès ou erreur
 export type CommentResponse =
   | { error: string }
   | {

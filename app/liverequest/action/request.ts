@@ -1,25 +1,27 @@
-// /app/api/request/RequestFormAction.ts (par exemple)
+// /app/api/request/RequestFormAction.ts
 'use server';
 
 import { prisma } from "@/lib/prisma";
 
 export async function RequestFormAction({
-  email,
+  name,
+  functionInChurch,
   liveSessionId,
 }: {
-  email: string;
+  name: string;
+  functionInChurch: string;
   liveSessionId: string;
 }) {
-  if (!email || !liveSessionId) {
-    return { success: false, message: "Email ou ID de session manquant." };
+  if (!name ||  !functionInChurch || !liveSessionId) {
+    return { success: false, message: "Tous les champs sont requis." };
   }
 
   try {
     const newRequest = await prisma.request.create({
       data: {
-        name: email,
-        surname: "", // valeur vide
-        functionInChurch: "", // valeur vide
+        name,
+        surname: '',
+        functionInChurch,
         liveSessionId,
         status: "PENDING",
       },

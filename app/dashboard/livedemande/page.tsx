@@ -18,7 +18,6 @@ import { getRequestsAction } from "./actions/getRequestsAction"
 import { Check, X, AlertCircle, Search } from "lucide-react"
 import { Input } from "@/components/ui/input"
 
-// Définition des types pour les requêtes
 interface Request {
   id: string
   name: string
