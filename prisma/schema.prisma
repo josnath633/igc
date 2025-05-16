@@ -119,12 +119,11 @@ model Request {
 model Comment {
   id        String   @id @default(cuid())
   text      String
-  author    String   // Nom ou pseudo de l’auteur stocké en clair
+  author    String
   createdAt DateTime @default(now())
   expiresAt DateTime
-
-  @@index([expiresAt]) // Utile pour suppression automatique
 }
+
 
 model donation {
   id                    Int      @id @default(autoincrement())

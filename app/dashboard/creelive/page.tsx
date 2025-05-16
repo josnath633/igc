@@ -35,30 +35,31 @@ export default function CreateLivePage() {
 
   const handleCreateLive = async () => {
     try {
-      if (!title || !startTime || !endTime) {
-        alert("Veuillez remplir tous les champs !")
+      if (!title.trim()) {
+        alert("Le titre est obligatoire.")
         return
       }
-
+  
       const newLive = await createLive({
         title,
         description: description || undefined,
-        startTime: new Date(`2024-01-01T${startTime}:00`),
-        endTime: new Date(`2024-01-01T${endTime}:00`),
+        startTime: startTime ? new Date(`2024-01-01T${startTime}:00`) : undefined,
+        endTime: endTime ? new Date(`2024-01-01T${endTime}:00`) : undefined,
       })
-
-      setLiveSessions([...liveSessions, newLive])
+  
+      setLiveSessions([...liveSessions as any, newLive as any])
       setTitle("")
       setDescription("")
       setStartTime("")
       setEndTime("")
       setIsSuccess(true)
-      
+  
       setTimeout(() => setIsSuccess(false), 3000)
     } catch (error) {
       console.error("Erreur lors de la création du live", error)
     }
   }
+  
 
   const availableTimes = Array.from({ length: 15 }, (_, i) => {
     const hour = (8 + i).toString().padStart(2, "0")

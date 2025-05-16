@@ -1,85 +1,71 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { motion } from "framer-motion"
 import { getRequestStatus } from "./action/requestStatusAction"
 import { Clock, CheckCircle, XCircle, AlertTriangle } from "lucide-react"
 
 const WaitingPage = () => {
-  const [isLoading, setIsLoading] = useState(true)
+  const { data: session, status: sessionStatus } = useSession()
   const [status, setStatus] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  const [userName, setUserName] = useState<string | null>(null)
   const [progress, setProgress] = useState(0)
   const router = useRouter()
 
-  useEffect(() => {
-    const name = localStorage.getItem("userName")
-    if (name) {
-      setUserName(name)
-    } else {
-      setError("Utilisateur non trouvé dans localStorage.")
-    }
-  }, [])
+  const userEmail = session?.user?.email || null
 
+  // Progress bar simulation
   useEffect(() => {
-    // Animation de progression
     const interval = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval)
-          return 100
-        }
-        return prev + 1
-      })
+      setProgress((prev) => (prev >= 100 ? 100 : prev + 1))
     }, 300)
-
     return () => clearInterval(interval)
   }, [])
 
+  // Status checking logic
   useEffect(() => {
-    let timeoutId: NodeJS.Timeout;
-  
+    let timeoutId: NodeJS.Timeout
+    let intervalId: NodeJS.Timeout
+
     const checkRequestStatus = async () => {
-      if (!userName) return;
-  
+      if (!userEmail) {
+        setError("Utilisateur non connecté.")
+        return
+      }
+
       try {
-        const userStatus = await getRequestStatus(userName);
-        console.log("Statut reçu:", userStatus);
-  
+        const userStatus = await getRequestStatus(userEmail)
+        console.log("Statut reçu:", userStatus)
+
         if (userStatus === "APPROVED") {
-          setStatus("APPROVED");
-          setTimeout(() => {
-            router.push("/live");
-          }, 2000);
+          setStatus("APPROVED")
+          setTimeout(() => router.push("/live"), 2000) // Redirige vers la page live après 2 secondes
         } else if (userStatus === "REJECTED") {
-          setStatus("REJECTED");
+          setStatus("REJECTED")
         } else {
-          // Tant que c'est en attente, on continue de vérifier
-          setStatus("PENDING");
-  
-          timeoutId = setTimeout(() => {
-            checkRequestStatus(); // Relance le check
-          }, 10000); // toutes les 10s
+          setStatus("PENDING")
         }
       } catch (err) {
-        console.error("Erreur lors de la vérification du statut :", err);
-        setError("Impossible de vérifier le statut pour le moment.");
-      } finally {
-        setIsLoading(false);
+        console.error("Erreur lors de la vérification du statut :", err)
+        setError("Impossible de vérifier le statut pour le moment.")
       }
-    };
-  
-    if (userName) {
-      checkRequestStatus();
     }
-  
+
+    if (sessionStatus === "authenticated") {
+      checkRequestStatus() // Vérifie immédiatement au chargement
+
+      // Vérifie à intervalles réguliers (toutes les 10 secondes)
+      intervalId = setInterval(checkRequestStatus, 10000)
+    }
+
+    // Nettoyage des intervalle et timeout lorsque le composant est démonté
     return () => {
-      clearTimeout(timeoutId); // Nettoyage au démontage du composant
-    };
-  }, [userName, router]);
-  
+      clearInterval(intervalId)
+      clearTimeout(intervalId)
+    }
+  }, [userEmail, sessionStatus, router])
 
   return (
     <div className="min-h-screen flex justify-center items-center bg-gradient-to-b from-white to-yellow-50 p-4">
@@ -89,10 +75,19 @@ const WaitingPage = () => {
         transition={{ duration: 0.5 }}
         className="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border border-yellow-200"
       >
-        {isLoading ? (
+        {!session && sessionStatus !== "loading" ? (
           <div className="text-center">
-            <div className="w-16 h-16 border-4 border-yellow-500 border-t-red-600 rounded-full animate-spin mx-auto mb-4"></div>
-            <h2 className="text-xl font-semibold text-gray-700">Vérification du statut...</h2>
+            <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <AlertTriangle className="h-8 w-8 text-red-600" />
+            </div>
+            <h2 className="text-xl font-semibold text-red-600 mb-2">Non connecté</h2>
+            <p className="text-gray-600 mb-4">Veuillez vous connecter pour continuer.</p>
+            <button
+              onClick={() => router.push("/api/auth/signin")}
+              className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+            >
+              Se connecter
+            </button>
           </div>
         ) : error ? (
           <div className="text-center">
@@ -133,14 +128,13 @@ const WaitingPage = () => {
             </div>
             <h2 className="text-xl font-semibold text-red-600 mb-2">Demande Rejetée</h2>
             <p className="text-gray-600 mb-4">
-              Nous sommes désolés, mais votre demande a été rejetée. Veuillez contacter l'administrateur pour plus
-              d'informations.
+              Votre demande a été rejetée. Veuillez contacter l’administrateur pour plus d’informations.
             </p>
             <button
               onClick={() => router.push("/")}
               className="bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
             >
-              Retour à l'accueil
+              Retour à l’accueil
             </button>
           </div>
         ) : (
@@ -150,8 +144,7 @@ const WaitingPage = () => {
             </div>
             <h2 className="text-xl font-semibold text-yellow-600 mb-2">Demande en Attente</h2>
             <p className="text-gray-600 mb-4">
-              Votre demande est en cours d'examen. Veuillez patienter pendant que l'administrateur examine votre
-              demande.
+              Votre demande est en cours d’examen. Veuillez patienter pendant que l’administrateur l’examine.
             </p>
             <div className="space-y-2">
               <div className="flex justify-between text-sm text-gray-500">
@@ -163,7 +156,7 @@ const WaitingPage = () => {
               </div>
             </div>
             <p className="text-sm text-gray-500 mt-4">
-              Cette page se rafraîchit automatiquement. Vous n'avez pas besoin de recharger la page.
+              Cette page se rafraîchit automatiquement. Vous n’avez pas besoin de la recharger.
             </p>
           </div>
         )}
