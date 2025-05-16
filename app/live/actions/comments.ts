@@ -3,42 +3,52 @@
 import { prisma } from "@/lib/prisma"
 import { revalidatePath } from "next/cache"
 
-export async function createComment({ text, author }: { text: string; author: string }) {
-  if (!text || !author) return { error: "Champs manquants." }
+// 🔁 Type du retour possible : succès ou erreur
+export type CommentResponse =
+  | { error: string }
+  | {
+      id: string
+      text: string
+      author: string
+      createdAt: Date
+      expiresAt: Date
+      timestamp: Date
+    }
 
-  const expiresAt = new Date(Date.now() + 3 * 60 * 60 * 1000) // 3h
+export async function createComment({
+  text,
+  author,
+}: {
+  text: string
+  author: string
+}): Promise<CommentResponse> {
+  try {
+    // ✅ Vérifie les champs requis
+    if (!text.trim() || !author.trim()) {
+      return { error: "Champs manquants." }
+    }
 
-  const comment = await prisma.comment.create({
-    data: {
-      text,
-      author,
-      expiresAt,
-    },
-  })
+    const expiresAt = new Date(Date.now() + 3 * 60 * 60 * 1000) // 3h
 
-  revalidatePath("/") // ou la page concernée
-  
-  // Adding timestamp to match the interface
-  return {
-    ...comment,  // Spread all properties from the comment
-    timestamp: comment.createdAt,  // Rename `createdAt` to `timestamp`
-  }
-}
-
-export async function getComments() {
-  const comments = await prisma.comment.findMany({
-    where: {
-      expiresAt: {
-        gt: new Date(),
+    // ✅ Crée le commentaire dans la BDD
+    const comment = await prisma.comment.create({
+      data: {
+        text,
+        author,
+        expiresAt,
       },
-    },
-    orderBy: {
-      createdAt: "desc",
-    },
-  })
+    })
 
-  return comments.map((comment) => ({
-    ...comment,
-    timestamp: comment.createdAt,  // Ensure we return `timestamp` as well
-  }))
+    // ✅ Révalidation de la page (utile si tu affiches les commentaires en SSR)
+    revalidatePath("/")
+
+    // ✅ Retourne les données enrichies
+    return {
+      ...comment,
+      timestamp: comment.createdAt, // alias utile pour l'affichage
+    }
+  } catch (error) {
+    console.error("Erreur lors de la création du commentaire :", error)
+    return { error: "Erreur lors de la création du commentaire." }
+  }
 }

@@ -12,6 +12,7 @@ const RequestForm = () => {
   const [liveSessionId, setLiveSessionId] = useState<string>("");
   const [isSuccess, setIsSuccess] = useState<boolean>(false);
   const [requestDone, setRequestDone] = useState<boolean>(false);
+  const [isUserApproved, setIsUserApproved] = useState<boolean>(false); // New state to track user approval
 
   const { data: session, status } = useSession();
   const searchParams = useSearchParams();
@@ -23,14 +24,37 @@ const RequestForm = () => {
     if (urlId) setLiveSessionId(urlId);
   }, [searchParams]);
 
-  // Si l’utilisateur est connecté, envoie sa demande à la BDD
+  // Vérifie si l'utilisateur est approuvé dans la base de données
+  useEffect(() => {
+    const checkUserApproval = async () => {
+      if (session?.user?.role === "client" && session?.user?.email) {
+        const userEmail = session.user.email;
+        const userName = session.user.name || userEmail; // Assuming name is the email if not provided.
+
+        // Call an API or function to verify if the user is approved.
+        // For the sake of the example, let's mock this request:
+        const response = await fetch(`/api/check-user-approval?email=${userEmail}&name=${userEmail}`);
+        const data = await response.json();
+
+        if (data.isApproved) {
+          setIsUserApproved(true); // Set user approval 
+          router.push("/live");
+        }
+      }
+    };
+
+    checkUserApproval();
+  }, [status, session]);
+
+  // Si l’utilisateur est connecté et approuvé, envoie sa demande à la BDD
   useEffect(() => {
     const sendRequest = async () => {
       if (
         status === "authenticated" &&
         session?.user?.email &&
         liveSessionId &&
-        !requestDone
+        !requestDone &&
+        isUserApproved // Ensure user is approved before sending request
       ) {
         await RequestFormAction({
           email: session.user.email,
@@ -47,7 +71,7 @@ const RequestForm = () => {
     };
 
     sendRequest();
-  }, [status, session, liveSessionId, requestDone, router]);
+  }, [status, session, liveSessionId, requestDone, isUserApproved, router]);
 
   // Connexion via Google
   const handleGoogleSignIn = async () => {
