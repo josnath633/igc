@@ -12,7 +12,6 @@ export async function RequestFormAction({
   functionInChurch: string;
   liveSessionId: string;
 }) {
-  // Validation des champs requis
   if (!name ||  !functionInChurch || !liveSessionId) {
     return { success: false, message: "Tous les champs sont requis." };
   }

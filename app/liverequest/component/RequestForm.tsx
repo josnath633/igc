@@ -29,7 +29,6 @@ const RequestForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Validation des champs du formulaire
     if (!name || !functionInChurch || !liveSessionId) {
       setError("Tous les champs sont requis.");
       return;
