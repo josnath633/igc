@@ -3,17 +3,15 @@ import { prisma } from "@/lib/prisma";
 
 export async function RequestFormAction({
   name,
-  surname,
   functionInChurch,
   liveSessionId, // ID de la session live
 }: {
   name: string;
-  surname: string;
   functionInChurch: string;
   liveSessionId: string;  // Ajoutez liveSessionId comme paramètre
 }) {
   // Validation des champs
-  if (!name || !surname || !functionInChurch || !liveSessionId) {
+  if (!name || !functionInChurch || !liveSessionId) {
     return { success: false, message: "Tous les champs sont requis." };
   }
 
@@ -25,7 +23,7 @@ export async function RequestFormAction({
     const newRequest = await prisma.request.create({
       data: {
         name,
-        surname,
+        surname:'',
         functionInChurch,
         liveSessionId,  // Enregistrer l'ID du live avec la demande
         status: "PENDING",  // Le statut par défaut

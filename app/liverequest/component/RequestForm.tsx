@@ -30,7 +30,7 @@ const RequestForm = () => {
     e.preventDefault();
 
     // Validation des champs du formulaire
-    if (!name || !surname || !functionInChurch || !liveSessionId) {
+    if (!name || !functionInChurch || !liveSessionId) {
       setError("Tous les champs sont requis.");
       return;
     }
@@ -39,7 +39,7 @@ const RequestForm = () => {
     setError("");
 
     try {
-      const response = await RequestFormAction({ name, surname, functionInChurch, liveSessionId });
+      const response = await RequestFormAction({ name,functionInChurch, liveSessionId });
 
       if (response.success) {
         setIsSuccess(true);
@@ -118,22 +118,10 @@ const RequestForm = () => {
                 />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="surname" className="block text-sm font-medium text-gray-700">
-                  Prénom
-                </label>
-                <input
-                  id="surname"
-                  type="text"
-                  className="w-full p-2 border border-yellow-200 rounded-lg"
-                  value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
-                  placeholder="Entrez votre prénom"
-                />
-              </div>
+              
               <div className="space-y-2">
                 <label htmlFor="functionInChurch" className="block text-sm font-medium text-gray-700">
-                  Fonction dans l'église
+                   l'église
                 </label>
                 <input
                   id="functionInChurch"
