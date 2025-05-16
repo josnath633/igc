@@ -68,7 +68,7 @@ const LiveItem = ({ live }: { live: Live }) => {
       </CardContent>
       <CardFooter className="bg-amber-100/50 p-3 flex justify-end">
         <Button variant="ghost" size="sm" className="text-amber-900 hover:text-amber-700 hover:bg-amber-200/50">
-         passer en live
+         Passer en live
         </Button>
       </CardFooter>
     </Card>
