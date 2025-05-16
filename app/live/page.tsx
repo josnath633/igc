@@ -12,7 +12,6 @@ interface YouTubeConfig {
   apiKey: string
   videoId: string
 }
-
 interface VideoData {
   id: string
   snippet: {
@@ -32,7 +31,6 @@ interface Comment {
   timestamp: Date
 }
 
-
 export default function Page(){
 
   const [videoData, setVideoData] = useState<VideoData | null>(null)
@@ -47,7 +45,6 @@ export default function Page(){
   const [userEmail, setUserEmail] = useState<string>("")
   const router = useRouter()
 
-  // Récupère les infos utilisateur depuis le localStorage
   useEffect(() => {
     const storedName = localStorage.getItem("userName") || "Anonyme"
     const storedEmail = localStorage.getItem("userEmail") || ""
