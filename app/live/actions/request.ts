@@ -1,3 +1,4 @@
+
 // app/actions/requestStatusAction.ts
 "use server"
 
@@ -19,7 +20,7 @@ export async function getRequestStatus(email: string) {
     if (!latestRequest) {
       throw new Error("Aucune demande trouvée.")
     }
-    console.log(latestRequest.status)
+  console.log(latestRequest.status)
     return latestRequest.status // "APPROVED", "REJECTED", "PENDING"
   } catch (error) {
     console.error("Erreur lors de la récupération du statut :", error)
