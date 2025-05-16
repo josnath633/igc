@@ -34,7 +34,7 @@ interface Comment {
   timestamp: Date
 }
 
-const LivePage = () => {
+export default function Page() {
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState<string>("")
@@ -316,6 +316,4 @@ const LivePage = () => {
     </div>
   )
 }
-
-export default LivePage
 
