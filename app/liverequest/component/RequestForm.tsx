@@ -39,15 +39,12 @@ const RequestForm = () => {
     setError("");
 
     try {
-      // Appel à l'action serveur pour envoyer la requête avec l'ID de la session live
       const response = await RequestFormAction({ name, surname, functionInChurch, liveSessionId });
 
       if (response.success) {
         setIsSuccess(true);
-        // Stocker le nom d'utilisateur dans localStorage pour la page d'attente
         localStorage.setItem("userName", name);
 
-        // Rediriger après 2 secondes
         setTimeout(() => {
           router.push("/waiting");
         }, 2000);
@@ -134,7 +131,6 @@ const RequestForm = () => {
                   placeholder="Entrez votre prénom"
                 />
               </div>
-
               <div className="space-y-2">
                 <label htmlFor="functionInChurch" className="block text-sm font-medium text-gray-700">
                   Fonction dans l'église
