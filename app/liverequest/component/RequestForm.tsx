@@ -1,65 +1,88 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { signIn, useSession } from "next-auth/react";
+import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion } from "framer-motion";
+import { FcGoogle } from "react-icons/fc";
+import { Check } from "lucide-react";
 import { RequestFormAction } from "../action/request";
-import { User, Briefcase, Check } from "lucide-react";
 
 const RequestForm = () => {
-  const [name, setName] = useState("");
-  const [surname, setSurname] = useState("");
-  const [functionInChurch, setFunctionInChurch] = useState("");
-  const [error, setError] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [liveSessionId, setLiveSessionId] = useState("");  // Ajoutez l'ID de session live ici
-  const router = useRouter();
+  const [liveSessionId, setLiveSessionId] = useState<string>("");
+  const [isSuccess, setIsSuccess] = useState<boolean>(false);
+  const [requestDone, setRequestDone] = useState<boolean>(false);
+  const [isUserApproved, setIsUserApproved] = useState<boolean>(false); // New state to track user approval
+
+  const { data: session, status } = useSession();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
+  // Récupère l’ID de session dans l’URL (ex: ?id=...)
   useEffect(() => {
-    const url = window.location.href;
-    const match = url.match(/id=([0-9a-fA-F-]{36})/);
-    if (match && match[1]) {
-      setLiveSessionId(match[1]);
-    }
-  }, []);
-  
+    const urlId = searchParams.get("id");
+    if (urlId) setLiveSessionId(urlId);
+  }, [searchParams]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  // Vérifie si l'utilisateur est approuvé dans la base de données
+  useEffect(() => {
+    const checkUserApproval = async () => {
+      if (session?.user?.role === "client" && session?.user?.email) {
+        const userEmail = session.user.email;
+        const userName = session.user.name || userEmail; // Assuming name is the email if not provided.
 
-    // Validation des champs du formulaire
-    if (!name || !surname || !functionInChurch || !liveSessionId) {
-      setError("Tous les champs sont requis.");
+        // Call an API or function to verify if the user is approved.
+        // For the sake of the example, let's mock this request:
+        const response = await fetch(`/api/check-user-approval?email=${userEmail}&name=${userEmail}`);
+        const data = await response.json();
+
+        if (data.isApproved) {
+          setIsUserApproved(true); // Set user approval 
+          router.push("/live");
+        }
+      }
+    };
+
+    checkUserApproval();
+  }, [status, session]);
+
+  // Si l’utilisateur est connecté et approuvé, envoie sa demande à la BDD
+  useEffect(() => {
+    const sendRequest = async () => {
+      if (
+        status === "authenticated" &&
+        session?.user?.email &&
+        liveSessionId &&
+        !requestDone &&
+        isUserApproved // Ensure user is approved before sending request
+      ) {
+        await RequestFormAction({
+          email: session.user.email,
+          liveSessionId,
+        });
+        setRequestDone(true);
+        setIsSuccess(true);
+
+        // Redirige après 2.5s
+        setTimeout(() => {
+          router.push(`/waiting?id=${liveSessionId}`);
+        }, 2500);
+      }
+    };
+
+    sendRequest();
+  }, [status, session, liveSessionId, requestDone, isUserApproved, router]);
+
+  // Connexion via Google
+  const handleGoogleSignIn = async () => {
+    if (!liveSessionId) {
+      alert("ID de session live manquant dans l'URL.");
       return;
     }
 
-    setIsSubmitting(true);
-    setError("");
-
-    try {
-      // Appel à l'action serveur pour envoyer la requête avec l'ID de la session live
-      const response = await RequestFormAction({ name, surname, functionInChurch, liveSessionId });
-
-      if (response.success) {
-        setIsSuccess(true);
-        // Stocker le nom d'utilisateur dans localStorage pour la page d'attente
-        localStorage.setItem("userName", name);
-
-        // Rediriger après 2 secondes
-        setTimeout(() => {
-          router.push("/waiting");
-        }, 2000);
-      } else {
-        setError(response.message || "Une erreur est survenue.");
-      }
-    } catch (error) {
-      console.error("Erreur lors de la soumission:", error);
-      setError("Une erreur s'est produite. Veuillez réessayer.");
-    } finally {
-      setIsSubmitting(false);
-    }
+    await signIn("google", {
+      callbackUrl: `/liverequest?id=${liveSessionId}`, // Reviens ici après login pour lancer useEffect
+    });
   };
 
   return (
@@ -79,9 +102,11 @@ const RequestForm = () => {
             <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <Check className="h-8 w-8 text-green-600" />
             </div>
-            <h2 className="text-2xl font-bold text-green-600 mb-2">Demande Envoyée!</h2>
+            <h2 className="text-2xl font-bold text-green-600 mb-2">
+              Connexion réussie!
+            </h2>
             <p className="text-gray-600 mb-4">
-              Votre demande a été soumise avec succès. Vous allez être redirigé vers la page d'attente.
+              Vous allez être redirigé vers la page d'attente.
             </p>
             <div className="w-full bg-gray-200 h-2 rounded-full overflow-hidden">
               <motion.div
@@ -93,70 +118,15 @@ const RequestForm = () => {
             </div>
           </motion.div>
         ) : (
-          <div className="bg-white p-8 rounded-xl shadow-lg border border-yellow-200">
-            <h2 className="text-2xl font-bold text-center text-black mb-6">Formulaire de Demande</h2>
-
-            {error && (
-              <motion.div
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg text-red-600 text-sm"
-              >
-                {error}
-              </motion.div>
-            )}
-
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div className="space-y-2">
-                <label htmlFor="name" className="block text-sm font-medium text-gray-700">
-                  Nom
-                </label>
-                <input
-                  id="name"
-                  type="text"
-                  className="w-full p-2 border border-yellow-200 rounded-lg"
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  placeholder="Entrez votre nom"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="surname" className="block text-sm font-medium text-gray-700">
-                  Prénom
-                </label>
-                <input
-                  id="surname"
-                  type="text"
-                  className="w-full p-2 border border-yellow-200 rounded-lg"
-                  value={surname}
-                  onChange={(e) => setSurname(e.target.value)}
-                  placeholder="Entrez votre prénom"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label htmlFor="functionInChurch" className="block text-sm font-medium text-gray-700">
-                  Fonction dans l'église
-                </label>
-                <input
-                  id="functionInChurch"
-                  type="text"
-                  className="w-full p-2 border border-yellow-200 rounded-lg"
-                  value={functionInChurch}
-                  onChange={(e) => setFunctionInChurch(e.target.value)}
-                  placeholder="Entrez votre fonction"
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full bg-red-600 text-white py-3 rounded-lg"
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? "Traitement en cours..." : "Envoyer la demande"}
-              </button>
-            </form>
+          <div className="bg-white p-8 rounded-xl shadow-lg border border-yellow-200 text-center">
+            <h2 className="text-2xl font-bold text-black mb-6">Connexion</h2>
+            <button
+              onClick={handleGoogleSignIn}
+              className="flex items-center justify-center gap-2 bg-red-600 hover:bg-red-700 text-white py-3 px-6 rounded-lg w-full"
+            >
+              <FcGoogle size={24} className="bg-white rounded-full" />
+              Se connecter avec Google
+            </button>
           </div>
         )}
       </motion.div>

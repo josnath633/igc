@@ -1,6 +1,6 @@
-"use server";
+"use server"
 
-import { prisma } from "@/lib/prisma";
+import { prisma } from "@/lib/prisma"
 
 export async function createLive({
   title,
@@ -8,31 +8,29 @@ export async function createLive({
   startTime,
   endTime,
 }: {
-  title: string;
-  description?: string | null;
-  startTime: Date;
-  endTime: Date;
+  title: string
+  description?: string | null
+  startTime?: Date
+  endTime?: Date
 }) {
   try {
-    // Vérifier que les champs requis sont présents
-    if (!title || !startTime || !endTime) {
-      throw new Error("Title, start time, and end time are required.");
+    if (!title.trim()) {
+      throw new Error("Le titre est requis.")
     }
 
-    // Créer le live
     const newLive = await prisma.live.create({
       data: {
         title,
-        description: description ?? "", // Utilise une chaîne vide si null ou undefined
-        startTime,
-        endTime,
-        dateTime: startTime, // On prend startTime comme date de référence pour `dateTime`
+        description: description ?? "",
+        startTime: new Date() ?? "", // ✅ Remplace undefined par null
+        endTime: new Date() ?? "",     // ✅ Remplace undefined par null
+        dateTime: startTime ?? new Date(), // ✅ Fallback à la date actuelle si non fourni
       },
-    });
+    })
 
-    return newLive;
+    return newLive
   } catch (error) {
-    console.error("Error creating live:", error);
-    throw new Error("Erreur lors de la création du live");
+    console.error("Erreur lors de la création du live:", error)
+    throw new Error("Erreur lors de la création du live")
   }
 }
