@@ -1,17 +1,31 @@
-// types/next-auth.d.ts
 import NextAuth from "next-auth"
 
-// Étendre le type `User` pour inclure `role`
 declare module "next-auth" {
   interface Session {
+    accessToken?: string
+    refreshToken?: string
+    provider?: string
     user: {
       id: string
-      role: string // Ajoute la propriété `role`
-    } & DefaultSession["user"]
+      role: string
+      name?: string | null
+      email?: string | null
+    }
   }
 
   interface User {
     id: string
-    role: string // Ajoute la propriété `role` ici aussi
+    role: string
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: string
+    role: string
+    accessToken?: string
+    refreshToken?: string
+    expiresAt?: number
+    provider?: string
   }
 }
