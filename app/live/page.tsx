@@ -32,7 +32,9 @@ interface Comment {
   timestamp: Date
 }
 
-const page = () => {
+export default function Page(){
+
+
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState<string>("")
@@ -321,4 +323,4 @@ const page = () => {
   )
 }
 
-export default page
+
