@@ -1,16 +1,17 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
+import { useRouter } from 'next/navigation'
 import { getYouTubeConfig } from "@/lib/firebase"
 import { Send, ThumbsUp, MessageSquare, Share2, User } from "lucide-react"
 import { createComment } from "./actions/comments"
+import { getRequestStatus } from "./actions/request"
 
 interface YouTubeConfig {
   apiKey: string
   videoId: string
 }
-
 interface VideoData {
   id: string
   snippet: {
@@ -28,10 +29,10 @@ interface Comment {
   text: string
   author: string
   timestamp: Date
-  
 }
 
-const LivePage = () => {
+export default function Page(){
+
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [comment, setComment] = useState<string>("")
@@ -39,63 +40,88 @@ const LivePage = () => {
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [userName, setUserName] = useState<string>("")
 
-  // Récupération du nom utilisateur depuis le localStorage
+  const [userName, setUserName] = useState<string>("Anonyme")
+  const [userEmail, setUserEmail] = useState<string>("")
+  const router = useRouter()
+
   useEffect(() => {
-    const nameFromStorage = localStorage.getItem("userName")
-    if (nameFromStorage) {
-      setUserName(nameFromStorage)
-    } else {
-      setUserName("Anonyme")
-    }
+    const storedName = localStorage.getItem("userName") || "Anonyme"
+    const storedEmail = localStorage.getItem("userEmail") || ""
+
+    setUserName(storedName)
+    setUserEmail(storedEmail)
   }, [])
 
-  // Soumettre un nouveau commentaire
   const handleCommentSubmit = async () => {
     if (comment.trim()) {
+      const text = comment.trim()
+      setComment("")
+
       try {
-        const newComment = await createComment({ text: comment, author: userName }) // Appel de la Server Action
-        setComments([newComment as any, ...comments]) // Ajoute le commentaire en haut
-        setComment("") // Réinitialise le champ de commentaire
-      } catch (error) {
-        setError("Erreur lors de l'ajout du commentaire.")
+        const savedComment = await createComment({ text, author: userName })
+
+        if ("error" in savedComment) {
+          console.error("Erreur:", savedComment.error)
+          return
+        }
+
+        setComments((prev) => [
+          {
+            id: savedComment.id,
+            text: savedComment.text,
+            author: savedComment.author,
+            timestamp: new Date(savedComment.timestamp),
+          },
+          ...prev,
+        ])
+      } catch (err) {
+        console.error("Erreur lors de l’envoi du commentaire :", err)
       }
     }
   }
 
-  // Gérer le like
   const handleLike = () => {
-    if (isLiked) {
-      setLikeCount(likeCount - 1)
-    } else {
-      setLikeCount(likeCount + 1)
-    }
-    setIsLiked(!isLiked)
+    setIsLiked((prev) => !prev)
+    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1))
   }
 
-  // Récupérer les données de la vidéo et les commentaires
+  useEffect(() => {
+    const checkAccess = async () => {
+      try {
+        const status = await getRequestStatus(userEmail)
+        if (status !== "APPROVED") router.push("/")
+      } catch (err) {
+        console.error("Erreur lors de la vérification du statut :", err)
+        router.push("/")
+      }
+    }
+
+    if (userEmail) {
+      checkAccess()
+    }
+  }, [userEmail, router])
+
   useEffect(() => {
     const fetchVideoData = async () => {
       try {
+        const APPROVED = await getRequestStatus(userEmail)
+        if (!APPROVED) {
+          router.push('/')
+          return
+        }
+
         setIsLoading(true)
         const config = await getYouTubeConfig()
-        if (config && config.apiKey && config.videoId) {
+        if (config?.apiKey && config?.videoId) {
           const response = await fetch(
             `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${config.videoId}&key=${config.apiKey}`
           )
           const data = await response.json()
 
-          if (data.items && data.items.length > 0) {
+          if (data.items?.length > 0) {
             setVideoData(data.items[0])
-            setLikeCount(Number.parseInt(data.items[0].statistics.likeCount || "0"))
-
-            // Récupérer les commentaires depuis l'API
-            const commentResponse = await fetch("/api/comments")
-            if (commentResponse.ok) {
-              const fetchedComments = await commentResponse.json()
-              setComments(fetchedComments)
-            }
+            setLikeCount(parseInt(data.items[0].statistics.likeCount || "0"))
           } else {
             setError("Aucune vidéo trouvée.")
           }
@@ -110,9 +136,26 @@ const LivePage = () => {
     }
 
     fetchVideoData()
+  }, [userEmail, router])
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      try {
+        const response = await fetch("/api/comments")
+        const data = await response.json()
+        setComments(data)
+      } catch (error) {
+        console.error("Erreur lors du chargement des commentaires :", error)
+      }
+    }
+
+    const interval = setInterval(() => {
+      fetchComments()
+    }, 2000)
+
+    return () => clearInterval(interval)
   }, [])
 
-  // Affichage en cas de chargement
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-yellow-50">
@@ -124,7 +167,6 @@ const LivePage = () => {
     )
   }
 
-  // Affichage en cas d'erreur
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gradient-to-b from-white to-yellow-50">
@@ -142,7 +184,6 @@ const LivePage = () => {
     )
   }
 
-  // Affichage principal
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-yellow-50">
       {videoData && (
@@ -157,6 +198,7 @@ const LivePage = () => {
           </motion.h1>
 
           <div className="flex flex-col lg:flex-row gap-6">
+            {/* Video Section */}
             <motion.div
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -207,7 +249,7 @@ const LivePage = () => {
                   </div>
 
                   <div className="text-gray-600 text-sm">
-                    {Number.parseInt(videoData.statistics.viewCount).toLocaleString()} vues
+                    {parseInt(videoData.statistics.viewCount).toLocaleString()} vues
                   </div>
                 </div>
 
@@ -217,6 +259,7 @@ const LivePage = () => {
               </div>
             </motion.div>
 
+            {/* Chat Section */}
             <motion.div
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -232,28 +275,20 @@ const LivePage = () => {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-4 space-y-4 max-h-[400px]">
-                  <AnimatePresence>
-                    {comments.map((comment) => (
-                      <motion.div
-                        key={comment.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        exit={{ opacity: 0, y: -20 }}
-                        className="p-3 rounded-lg bg-gray-50 border border-gray-100"
-                      >
-                        <div className="flex items-center gap-2 mb-1">
-                          <div className="bg-yellow-100 rounded-full p-1">
-                            <User className="h-4 w-4 text-yellow-600" />
-                          </div>
-                          <span className="font-medium text-sm text-gray-700">{comment.author}</span>
-  
-
-
+                  {comments.map((comment) => (
+                    <div
+                      key={comment.id}
+                      className="p-3 rounded-lg bg-gray-50 border border-gray-100"
+                    >
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="bg-yellow-100 rounded-full p-1">
+                          <User className="h-4 w-4 text-yellow-600" />
                         </div>
-                        <p className="text-gray-700 text-sm">{comment.text}</p>
-                      </motion.div>
-                    ))}
-                  </AnimatePresence>
+                        <span className="font-medium text-sm text-gray-700">{comment.author}</span>
+                      </div>
+                      <p className="text-gray-700 text-sm">{comment.text}</p>
+                    </div>
+                  ))}
                 </div>
 
                 <div className="p-4 border-t border-yellow-200 bg-yellow-50">
@@ -284,5 +319,3 @@ const LivePage = () => {
     </div>
   )
 }
-
-export default LivePage

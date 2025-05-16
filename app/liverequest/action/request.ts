@@ -1,38 +1,35 @@
-'use server'
+// /app/api/request/RequestFormAction.ts
+'use server';
+
 import { prisma } from "@/lib/prisma";
 
 export async function RequestFormAction({
   name,
   functionInChurch,
-  liveSessionId, // ID de la session live
+  liveSessionId,
 }: {
   name: string;
   functionInChurch: string;
-  liveSessionId: string;  // Ajoutez liveSessionId comme paramètre
+  liveSessionId: string;
 }) {
-  // Validation des champs
-  if (!name || !functionInChurch || !liveSessionId) {
+  // Validation des champs requis
+  if (!name ||  !functionInChurch || !liveSessionId) {
     return { success: false, message: "Tous les champs sont requis." };
   }
 
-  // Ajout d'un log pour vérifier si liveSessionId est bien défini
-  console.log("ID de la session live:", liveSessionId);  // Ajoute un log ici
-
   try {
-    // Enregistrement de la demande dans la base de données avec la référence du live
     const newRequest = await prisma.request.create({
       data: {
         name,
-        surname:'',
+        surname: '',
         functionInChurch,
-        liveSessionId,  // Enregistrer l'ID du live avec la demande
-        status: "PENDING",  // Le statut par défaut
+        liveSessionId,
+        status: "PENDING",
       },
     });
+    
 
     console.log("Demande enregistrée avec succès :", newRequest);
-
-    // Retour du message de succès
     return { success: true, message: "Demande envoyée avec succès !" };
   } catch (error) {
     console.error("Erreur lors de l'enregistrement de la demande :", error);
