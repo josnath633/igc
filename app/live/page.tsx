@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from "react"
 import { motion, AnimatePresence } from "framer-motion"
+import { useSession } from "next-auth/react"
+import { useRouter } from 'next/navigation'  // Importation du hook de navigation
 import { getYouTubeConfig } from "@/lib/firebase"
 import { Send, ThumbsUp, MessageSquare, Share2, User } from "lucide-react"
 import { createComment } from "./actions/comments"
+import { getRequestStatus } from "./actions/requestatu"
 
 interface YouTubeConfig {
   apiKey: string
@@ -28,7 +31,6 @@ interface Comment {
   text: string
   author: string
   timestamp: Date
-  
 }
 
 const LivePage = () => {
@@ -39,17 +41,13 @@ const LivePage = () => {
   const [isLiked, setIsLiked] = useState(false)
   const [likeCount, setLikeCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
-  const [userName, setUserName] = useState<string>("")
 
-  // Récupération du nom utilisateur depuis le localStorage
-  useEffect(() => {
-    const nameFromStorage = localStorage.getItem("userName")
-    if (nameFromStorage) {
-      setUserName(nameFromStorage)
-    } else {
-      setUserName("Anonyme")
-    }
-  }, [])
+  // Utilisation de useSession pour récupérer les données de l'utilisateur
+  const { data: session } = useSession()
+  const userName = session?.user?.name || "Anonyme" // Si l'utilisateur n'est pas connecté, utiliser "Anonyme"
+  const userEmail = session?.user?.email || ""  // Récupérer l'email de l'utilisateur
+
+  const router = useRouter()  // Utilisation du hook de redirection
 
   // Soumettre un nouveau commentaire
   const handleCommentSubmit = async () => {
@@ -74,10 +72,36 @@ const LivePage = () => {
     setIsLiked(!isLiked)
   }
 
+  useEffect(() => {
+    const checkAccess: () => Promise<void> = async () => {
+      try {
+        const status = await getRequestStatus(userEmail)
+  
+        if (status !== "APPROVED") {
+          router.push("/") // redirige si non approuvé
+        }
+      } catch (err) {
+        console.error("Erreur lors de la vérification du statut :", err)
+        router.push("/") // redirige aussi en cas d'erreur
+      }
+    }
+  
+    if (userEmail) {
+      checkAccess()
+    }
+  }, [userEmail, router])
+  
   // Récupérer les données de la vidéo et les commentaires
   useEffect(() => {
     const fetchVideoData = async () => {
       try {
+        // Vérifiez l'approbation de l'utilisateur avant de charger la vidéo
+        const APPROVED = await getRequestStatus(userEmail) // Passer l'email à getRequestStatus
+        if (!APPROVED) {
+          router.push('/')  // Redirige vers la page d'accueil si non approuvé
+          return
+        }
+
         setIsLoading(true)
         const config = await getYouTubeConfig()
         if (config && config.apiKey && config.videoId) {
@@ -110,7 +134,7 @@ const LivePage = () => {
     }
 
     fetchVideoData()
-  }, [])
+  }, [userEmail, router])
 
   // Affichage en cas de chargement
   if (isLoading) {
@@ -246,9 +270,6 @@ const LivePage = () => {
                             <User className="h-4 w-4 text-yellow-600" />
                           </div>
                           <span className="font-medium text-sm text-gray-700">{comment.author}</span>
-  
-
-
                         </div>
                         <p className="text-gray-700 text-sm">{comment.text}</p>
                       </motion.div>
