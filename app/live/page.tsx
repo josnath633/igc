@@ -1,14 +1,12 @@
-
 "use client"
 
 import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { useSession } from "next-auth/react"
 import { useRouter } from 'next/navigation'
 import { getYouTubeConfig } from "@/lib/firebase"
 import { Send, ThumbsUp, MessageSquare, Share2, User } from "lucide-react"
-import { getRequestStatus } from "./actions/requestatu"
 import { createComment } from "./actions/comments"
+import { getRequestStatus } from "./actions/request"
 
 interface YouTubeConfig {
   apiKey: string
@@ -43,26 +41,32 @@ const LivePage = () => {
   const [likeCount, setLikeCount] = useState(0)
   const [isLoading, setIsLoading] = useState(true)
 
-  const { data: session } = useSession()
-  const userName = session?.user?.name || "Anonyme"
-  const userEmail = session?.user?.email || ""
+  const [userName, setUserName] = useState<string>("Anonyme")
+  const [userEmail, setUserEmail] = useState<string>("")
   const router = useRouter()
+
+  // Récupère les infos utilisateur depuis le localStorage
+  useEffect(() => {
+    const storedName = localStorage.getItem("userName") || "Anonyme"
+    const storedEmail = localStorage.getItem("userEmail") || ""
+
+    setUserName(storedName)
+    setUserEmail(storedEmail)
+  }, [])
 
   const handleCommentSubmit = async () => {
     if (comment.trim()) {
       const text = comment.trim()
-      setComment("") // vider l’input tout de suite pour réactivité
-  
+      setComment("")
+
       try {
         const savedComment = await createComment({ text, author: userName })
-  
-        // ✅ Vérifie si c’est une erreur
+
         if ("error" in savedComment) {
           console.error("Erreur:", savedComment.error)
           return
         }
-  
-        // ✅ TypeScript comprend ici que ce n’est plus une erreur
+
         setComments((prev) => [
           {
             id: savedComment.id,
@@ -146,12 +150,10 @@ const LivePage = () => {
       }
     }
 
-    // Fetch comments every 2 seconds
     const interval = setInterval(() => {
       fetchComments()
     }, 2000)
 
-    // Cleanup the interval when the component is unmounted
     return () => clearInterval(interval)
   }, [])
 
@@ -197,6 +199,7 @@ const LivePage = () => {
           </motion.h1>
 
           <div className="flex flex-col lg:flex-row gap-6">
+            {/* Video Section */}
             <motion.div
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -257,6 +260,7 @@ const LivePage = () => {
               </div>
             </motion.div>
 
+            {/* Chat Section */}
             <motion.div
               initial={{ x: 20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -318,4 +322,3 @@ const LivePage = () => {
 }
 
 export default LivePage
-
