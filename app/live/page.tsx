@@ -1,71 +1,69 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { motion } from "framer-motion"
-import { useRouter } from 'next/navigation'
-import { getYouTubeConfig } from "@/lib/firebase"
-import { Send, ThumbsUp, MessageSquare, Share2, User } from "lucide-react"
-import { createComment } from "./actions/comments"
-import { getRequestStatus } from "./actions/request"
+import { useEffect, useState } from "react";
+import { motion } from "framer-motion";
+import { useRouter } from 'next/navigation';
+import { getYouTubeConfig } from "@/lib/firebase";
+import { Send, ThumbsUp, MessageSquare, Share2, User } from "lucide-react";
+import { createComment } from "./actions/comments";
+import { getRequestStatus } from "./actions/request";
 
 interface YouTubeConfig {
-  apiKey: string
-  videoId: string
+  apiKey: string;
+  videoId: string;
 }
+
 interface VideoData {
-  id: string
+  id: string;
   snippet: {
-    title: string
-    description: string
-  }
+    title: string;
+    description: string;
+  };
   statistics: {
-    viewCount: string
-    likeCount: string
-  }
+    viewCount: string;
+    likeCount: string;
+  };
 }
 
 interface Comment {
-  id: string
-  text: string
-  author: string
-  timestamp: Date
+  id: string;
+  text: string;
+  author: string;
+  timestamp: Date;
 }
 
-export default function Page(){
+const LivePage = () => {
+  const [videoData, setVideoData] = useState<VideoData | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [comment, setComment] = useState<string>("");
+  const [comments, setComments] = useState<Comment[]>([]);
+  const [isLiked, setIsLiked] = useState(false);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [videoData, setVideoData] = useState<VideoData | null>(null)
-  const [error, setError] = useState<string | null>(null)
-  const [comment, setComment] = useState<string>("")
-  const [comments, setComments] = useState<Comment[]>([])
-  const [isLiked, setIsLiked] = useState(false)
-  const [likeCount, setLikeCount] = useState(0)
-  const [isLoading, setIsLoading] = useState(true)
+  const [userName, setUserName] = useState<string>("Anonyme");
+  const [userEmail, setUserEmail] = useState<string>("");
+  const router = useRouter();
 
-  const [userName, setUserName] = useState<string>("Anonyme")
-  const [userEmail, setUserEmail] = useState<string>("")
-  const router = useRouter()
-
+  // Fetch user data from localStorage
   useEffect(() => {
-    const storedName = localStorage.getItem("userName") || "Anonyme"
-    const storedEmail = localStorage.getItem("userEmail") || ""
+    const storedName = localStorage.getItem("userName") || "Anonyme";
+    const storedEmail = localStorage.getItem("userEmail") || "";
+    setUserName(storedName);
+    setUserEmail(storedEmail);
+  }, []);
 
-    setUserName(storedName)
-    setUserEmail(storedEmail)
-  }, [])
-
+  // Handle comment submission
   const handleCommentSubmit = async () => {
     if (comment.trim()) {
-      const text = comment.trim()
-      setComment("")
-
+      const text = comment.trim();
+      setComment("");
       try {
-        const savedComment = await createComment({ text, author: userName })
-
+        const savedComment = await createComment({ text, author: userName });
         if ("error" in savedComment) {
-          console.error("Erreur:", savedComment.error)
-          return
+          console.error("Erreur:", savedComment.error);
+          return;
         }
-
         setComments((prev) => [
           {
             id: savedComment.id,
@@ -74,87 +72,90 @@ export default function Page(){
             timestamp: new Date(savedComment.timestamp),
           },
           ...prev,
-        ])
+        ]);
       } catch (err) {
-        console.error("Erreur lors de l’envoi du commentaire :", err)
+        console.error("Erreur lors de l’envoi du commentaire :", err);
       }
     }
-  }
+  };
 
+  // Handle like action
   const handleLike = () => {
-    setIsLiked((prev) => !prev)
-    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1))
-  }
+    setIsLiked((prev) => !prev);
+    setLikeCount((prev) => (isLiked ? prev - 1 : prev + 1));
+  };
 
+  // Check user access status
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        const status = await getRequestStatus(userEmail)
-        if (status !== "APPROVED") router.push("/")
+        const status = await getRequestStatus(userEmail);
+        if (status !== "APPROVED") router.push("/");
       } catch (err) {
-        console.error("Erreur lors de la vérification du statut :", err)
-        router.push("/")
+        console.error("Erreur lors de la vérification du statut :", err);
+        router.push("/");
       }
-    }
+    };
 
     if (userEmail) {
-      checkAccess()
+      checkAccess();
     }
-  }, [userEmail, router])
+  }, [userEmail, router]);
 
-  useEffect(() => {
-    const fetchVideoData = async () => {
-      try {
-        const APPROVED = await getRequestStatus(userEmail)
-        if (!APPROVED) {
-          router.push('/')
-          return
-        }
-
-        setIsLoading(true)
-        const config = await getYouTubeConfig()
-        if (config?.apiKey && config?.videoId) {
-          const response = await fetch(
-            `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${config.videoId}&key=${config.apiKey}`
-          )
-          const data = await response.json()
-
-          if (data.items?.length > 0) {
-            setVideoData(data.items[0])
-            setLikeCount(parseInt(data.items[0].statistics.likeCount || "0"))
-          } else {
-            setError("Aucune vidéo trouvée.")
-          }
+  // Fetch YouTube data
+  const fetchVideoData = async () => {
+    try {
+      const config = await getYouTubeConfig();
+      if (config?.apiKey && config?.videoId) {
+        const response = await fetch(
+          `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails,statistics&id=${config.videoId}&key=${config.apiKey}`
+        );
+        const data = await response.json();
+        console.log("API Response:", data.items[0]);
+        if (data.items?.length > 0) {
+          const video = data.items[0];
+          setVideoData({
+            id: video.id,
+            snippet: video.snippet,
+            statistics: video.statistics,
+          });
+          setLikeCount(parseInt(video.statistics.likeCount || "0"));
         } else {
-          setError("Clé API ou Video ID non trouvée.")
+          setError("Aucune vidéo trouvée.");
         }
-      } catch (err) {
-        setError("Erreur de récupération des données.")
-      } finally {
-        setIsLoading(false)
+      } else {
+        setError("Clé API ou Video ID non trouvée.");
       }
+    } catch (err) {
+      setError("Erreur de récupération des données.");
+    } finally {
+      setIsLoading(false);
     }
+  };
 
-    fetchVideoData()
-  }, [userEmail, router])
-
+  // Fetch comments
   useEffect(() => {
     const fetchComments = async () => {
       try {
-        const response = await fetch("/api/comments")
-        const data = await response.json()
-        setComments(data)
+        const response = await fetch("/api/comments");
+        const data = await response.json();
+        setComments(data);
       } catch (error) {
-        console.error("Erreur lors du chargement des commentaires :", error)
+        console.error("Erreur lors du chargement des commentaires :", error);
       }
-    }
+    };
 
     const interval = setInterval(() => {
-      fetchComments()
-    }, 2000)
+      fetchComments();
+    }, 2000);
 
-    return () => clearInterval(interval)
-  }, [])
+    return () => clearInterval(interval);
+  }, []);
+
+  // Trigger video data fetch on page load
+  useEffect(() => {
+    fetchVideoData();
+  }, []);
 
   if (isLoading) {
     return (
@@ -164,7 +165,7 @@ export default function Page(){
           <div className="text-xl font-semibold text-gray-700">Chargement du live...</div>
         </div>
       </div>
-    )
+    );
   }
 
   if (error) {
@@ -181,30 +182,22 @@ export default function Page(){
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white to-yellow-50">
       {videoData && (
         <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="max-w-7xl mx-auto p-4 md:p-6">
-          <motion.h1
-            initial={{ y: -20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-2xl md:text-3xl font-bold mb-6 text-center text-black"
-          >
-            {videoData.snippet.title}
-          </motion.h1>
-
+          {/* Video and Chat Sections */}
           <div className="flex flex-col lg:flex-row gap-6">
-            {/* Video Section */}
             <motion.div
               initial={{ x: -20, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
               transition={{ delay: 0.3 }}
               className="flex-1 lg:w-2/3"
             >
+              {/* Video Section */}
               <div className="relative pb-[56.25%] h-0 overflow-hidden rounded-xl shadow-lg">
                 <iframe
                   className="absolute top-0 left-0 w-full h-full"
@@ -216,6 +209,7 @@ export default function Page(){
                 />
               </div>
 
+              {/* Video Stats */}
               <div className="mt-4 bg-white p-4 rounded-xl shadow-md border border-yellow-200">
                 <div className="flex justify-between items-center mb-4">
                   <div className="flex items-center gap-4">
@@ -229,6 +223,7 @@ export default function Page(){
                       <span>{likeCount}</span>
                     </motion.button>
 
+                    {/* Comment and Share buttons */}
                     <motion.button
                       whileHover={{ scale: 1.1 }}
                       whileTap={{ scale: 0.9 }}
@@ -248,13 +243,15 @@ export default function Page(){
                     </motion.button>
                   </div>
 
+                  {/* View Count */}
                   <div className="text-gray-600 text-sm">
                     {parseInt(videoData.statistics.viewCount).toLocaleString()} vues
                   </div>
                 </div>
 
-                <div className="text-gray-700 text-sm md:text-base">
-                  <p className="whitespace-pre-line">{videoData.snippet.description}</p>
+                {/* Video Description */}
+                <div className="text-gray-700 text-sm md:text-base whitespace-pre-line">
+                  {videoData.snippet.description}
                 </div>
               </div>
             </motion.div>
@@ -266,6 +263,7 @@ export default function Page(){
               transition={{ delay: 0.4 }}
               className="lg:w-1/3 flex flex-col"
             >
+              {/* Comments and Input */}
               <div className="bg-white rounded-xl shadow-md border border-yellow-200 flex-1 flex flex-col overflow-hidden">
                 <div className="p-4 border-b border-yellow-200 bg-yellow-50">
                   <h3 className="text-lg font-bold text-black flex items-center">
@@ -317,5 +315,7 @@ export default function Page(){
         </motion.div>
       )}
     </div>
-  )
-}
+  );
+};
+
+export default LivePage;
