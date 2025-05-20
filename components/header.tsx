@@ -97,7 +97,7 @@ export default function Header() {
 
               {session ? (
                 <Link href="/profile" className="flex items-center">
-                  <Image
+                  <img
                     src={session.user?.image || "/default-avatar.png"}
                     alt="User Avatar"
                     width={32}
