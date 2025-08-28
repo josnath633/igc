@@ -95,7 +95,7 @@ export default function Footer() {
                 <div className="w-8 h-8 rounded-full bg-[#FFD700]/10 flex items-center justify-center mr-3">
                   <MapPin size={14} className="text-[#FFD700]" />
                 </div>
-                <span>123 Rue de l'Église, Ville, Pays</span>
+                <span>hotel de la can , GABON , Libreville</span>
               </div>
               <div className="flex items-center text-sm">
                 <div className="w-8 h-8 rounded-full bg-[#FFD700]/10 flex items-center justify-center mr-3">
